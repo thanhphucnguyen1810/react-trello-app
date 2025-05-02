@@ -4,13 +4,17 @@ import { indigo, amber } from '@mui/material/colors'
 const APP_BAR_HEIGHT = '58px'
 const BOARD_BAR_HEIGHT = '60px'
 const BOARD_CONTENT_HEIGHT = `calc(100vh - ${APP_BAR_HEIGHT} - ${BOARD_BAR_HEIGHT})`
+const COLUMN_HEADER_HEIGHT = '50px'
+const COLUMN_FOOTER_HEIGHT = '56px'
 
 // create a theme instance.
 const theme = extendTheme({
   trello: {
     AppBarHeight: APP_BAR_HEIGHT,
     boardBarHeight: BOARD_BAR_HEIGHT,
-    BoardContentHeight: BOARD_CONTENT_HEIGHT
+    BoardContentHeight: BOARD_CONTENT_HEIGHT,
+    ColumnHeaderHeight: COLUMN_HEADER_HEIGHT,
+    ColumnFooterHeight: COLUMN_FOOTER_HEIGHT
   },
   colorSchemes: {
     light: {
