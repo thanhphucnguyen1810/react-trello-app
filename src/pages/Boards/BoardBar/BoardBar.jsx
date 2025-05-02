@@ -10,6 +10,7 @@ import AvatarGroup from '@mui/material/AvatarGroup'
 import { Tooltip } from '@mui/material'
 import Button from '@mui/material/Button'
 import PersionAddIcon from '@mui/icons-material/PersonAdd'
+import { capitalizeFirstLetter } from '~/utils/formatters'
 
 const MENU_STYLES = {
   color: 'white',
@@ -25,7 +26,12 @@ const MENU_STYLES = {
   }
 }
 
-function BoardBar() {
+function BoardBar( { board } ) {
+  // Nếu "props": là đầu vào của hàm
+  // const { board } = props
+  // const board = props.board
+
+
   return (
     <Box sx={{
       width: '100%',
@@ -43,7 +49,7 @@ function BoardBar() {
         <Chip
           sx={MENU_STYLES}
           icon={<DashboardIcon />}
-          label="Trello React"
+          label={board?.title}
           // clickable
           onClick={() => {}}
         ></Chip>
@@ -51,7 +57,7 @@ function BoardBar() {
         <Chip
           sx={MENU_STYLES}
           icon={<VpnLockIcon />}
-          label="Public/Private Workspace"
+          label={capitalizeFirstLetter(board?.type)}
           // clickable
           onClick={() => {}}
         ></Chip>
