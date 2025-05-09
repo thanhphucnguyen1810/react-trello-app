@@ -23,7 +23,8 @@ function Card({ card }) {
     // https://github.com/clauderic/dnd-kit/issues/117
     transform: CSS.Translate.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : undefined
+    opacity: isDragging ? 0.5 : undefined,
+    border: isDragging ? '1px solid rgb(44, 40, 236)' : undefined
   }
 
   const shouldShowCardActions = () => {
