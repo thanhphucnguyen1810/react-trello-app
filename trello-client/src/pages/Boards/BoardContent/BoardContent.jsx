@@ -3,7 +3,8 @@ import ListColumns from './ListColumns/ListColumns'
 import Box from '@mui/material/Box'
 import { mapOrder } from '~/utils/sorts'
 
-import { cloneDeep } from 'lodash'
+import { cloneDeep, isEmpty } from 'lodash'
+import { generatePlaceholderCardId } from '~/utils/formatters'
 
 import Column from './ListColumns/Column/Column'
 import Card from './ListColumns/Column/ListCards/Card/Card'
@@ -20,9 +21,9 @@ import {
   defaultDropAnimationSideEffects,
   closestCorners,
   pointerWithin,
-  rectIntersection,
-  getFirstCollision,
-  closestCenter
+  // rectIntersection,
+  getFirstCollision
+  // closestCenter
 } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
 
@@ -95,6 +96,12 @@ function BoardContent({ board }) {
       if (nextActiveColumn) {
         // Xóa card ở cái column active (cũng có thể hiểu là column cũ, cái lúc mà kéo card ra khỏi nó để sang column khác)
         nextActiveColumn.cards = nextActiveColumn.cards.filter(card => card._id !== activeDraggingCardId)
+
+        // Thêm PlaceholderCard vào nếu Column rỗng
+        if (isEmpty(nextActiveColumn.cards)) {
+          nextActiveColumn.cards = [generatePlaceholderCardId(nextActiveColumn)]
+        }
+
         // Cập nhật lại mảng cardOrderIds cho chuẩn dữ liệu
         nextActiveColumn.cardOrderIds = nextActiveColumn?.cards?.map(card => card._id)
       }
@@ -110,7 +117,12 @@ function BoardContent({ board }) {
           ...activeDraggingCardData,
           columnId: nextOverColumn._id
         }
+        // Tiếp theo là thêm card đang kéo vào overColumn theo vị trí index mới.
         nextOverColumn.cards = nextOverColumn.cards.toSpliced(newCardIndex, 0, rebuild_activeDraggingCardData)
+
+        // Xóa PlaceholderCard nếu nó đang tồn tại
+        nextOverColumn.cards = nextOverColumn.cards.filter(card => !card.FE_PlaceholderCard)
+
         // Cập nhật lại mảng cardOrderIds cho chuẩn dữ liệu
         nextOverColumn.cardOrderIds = nextOverColumn?.cards?.map(card => card._id)
       }
@@ -283,19 +295,25 @@ function BoardContent({ board }) {
     }
     // Tìm các điểm giao nhau, va chạm - intersections với con trỏ  ~ !!pointerIntersections?.length >0
     const pointerIntersections = pointerWithin(args)
-    const intersections = !!pointerIntersections?.length ? pointerIntersections : rectIntersection(args)
+    /*Nếu pointerIntersections là mảng rổng, return ko làm gì.
+      --> Kéo một card có image cover lớn và kéo lên phía trên cùng ra khỏi khu vực kéo thả
+    */
+    if (!pointerIntersections?.length) return
 
-    // Tìm overId đầu tiên trong đám intersections ở trên
-    let overId = getFirstCollision(intersections, 'id')
+    // Thuật toán phát hiện va chạm sẽ trả về một mảng các va  chạm ở đây
+    // const intersections = !!pointerIntersections?.length ? pointerIntersections : rectIntersection(args)
+
+    // Tìm overId đầu tiên trong đám pointerIntersections ở trên
+    let overId = getFirstCollision(pointerIntersections, 'id')
     if (overId) {
       /*
         Nếu cái over nó là column thì sẽ tìm tới cardId gần nhất bên trong khu vực va chạm đó dựa vào
-        thuật toán phát hiện va chạm closesCenter hoặc closestCorners đều được. Tuy nhiên dùng closesCenter nó mượt hơn.
+        thuật toán phát hiện va chạm closesCenter hoặc closestCorners đều được. Tuy nhiên dùng closestCorners nó mượt hơn.
       */
       const checkColumn = orderedColumns.find(column => column._id === overId)
       if (checkColumn) {
         // console.log('overId before: ', overId)
-        overId = closestCenter({
+        overId = closestCorners({
           ...args,
           droppableContainers: args.droppableContainers.filter(container => {
             return (container.id !== overId) && (checkColumn?.cardOrderIds?.includes(container.id))
