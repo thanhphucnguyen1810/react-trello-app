@@ -46,19 +46,22 @@ function BoardBar( { board } ) {
       borderBottom: '1px solid white'
     }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Chip
-          sx={MENU_STYLES}
-          icon={<DashboardIcon />}
-          label={board?.title}
-          // clickable
-          onClick={() => {}}
-        ></Chip>
+        <Tooltip title={board?.description}>
+          <Chip
+            sx={MENU_STYLES}
+            icon={<DashboardIcon />}
+            label={board?.title}
+            clickable
+            onClick={() => {}}
+          />
+        </Tooltip>
+
 
         <Chip
           sx={MENU_STYLES}
           icon={<VpnLockIcon />}
           label={capitalizeFirstLetter(board?.type)}
-          // clickable
+          clickable
           onClick={() => {}}
         ></Chip>
 
@@ -66,7 +69,7 @@ function BoardBar( { board } ) {
           sx={MENU_STYLES}
           icon={<AddToDriveIcon />}
           label="Add to Google Drive"
-          // clickable
+          clickable
           onClick={() => {}}
         ></Chip>
 
@@ -74,7 +77,7 @@ function BoardBar( { board } ) {
           sx={MENU_STYLES}
           icon={<BoltIcon />}
           label="Automation"
-          // clickable
+          clickable
           onClick={() => {}}
         ></Chip>
 
@@ -82,7 +85,7 @@ function BoardBar( { board } ) {
           sx={MENU_STYLES}
           icon={<FilterListIcon />}
           label="Filters"
-          // clickable
+          clickable
           onClick={() => {}}
         ></Chip>
       </Box>

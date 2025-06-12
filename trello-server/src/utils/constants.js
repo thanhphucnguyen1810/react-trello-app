@@ -5,3 +5,8 @@ export const WHITELIST_DOMAINS = [
   // sau này sẽ deploy lên domain chính thức
   // 'https://trello-app.netlify.app': VD
 ]
+
+export const BOARD_TYPES = {
+  PUBLIC: 'public',
+  PRIVATE: 'private'
+}
