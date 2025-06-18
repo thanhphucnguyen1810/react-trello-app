@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'react-toastify'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
@@ -57,7 +58,7 @@ function Column({ column }) {
   const [newCardTitle, setNewCardTitle] = useState('')
   const addNewCard = () => {
     if (!newCardTitle) {
-      console.error('Please enter Card Title!')
+      toast.error('Please enter Card Title!', { position: 'bottom-right'})
       return
     }
     console.log(newCardTitle)
@@ -193,7 +194,6 @@ function Column({ column }) {
                   size='small'
                   variant='outlined'
                   autoFocus
-                  data-no-dnd="true"
                   value={newCardTitle}
                   onChange={(e) => {
                     setNewCardTitle(e.target.value)
