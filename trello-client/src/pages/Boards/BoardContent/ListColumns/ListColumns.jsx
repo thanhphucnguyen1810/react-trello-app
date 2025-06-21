@@ -10,19 +10,29 @@ import { TextField } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 
 
-function ListColumns({ columns }) {
+function ListColumns({ columns, createNewColumn, createNewCard }) {
   const [openNewColumnForm, setOpenNewColumnForm] = useState(false)
   const toggleOpenNewColumnForm = () => setOpenNewColumnForm(!openNewColumnForm)
 
   const [newColumnTitle, setNewColumnTitle] = useState('')
-  const addNewColumn = () => {
+  const addNewColumn = async () => {
     if (!newColumnTitle) {
       toast.error('Please enter Column Title!')
       return
     }
-    console.log(newColumnTitle)
 
-    // Gọi API ở đây...
+    // Tạo dữ liệu column để gọi API
+    const newColumnData = {
+      title: newColumnTitle
+    }
+
+    /*
+      - Gọi lên props function createNewColumn nằm ở component cha cao nhất (boards/_í.jsx)
+      - Lưu ý: về sau sẽ đưa dữ liệu ra bên ngoài Redux Global Store. Lúc này, chúng ta có thể gọi luôn api ở đây là xong
+              thay vì lần lượt gọi lên component cha bên trên
+      => Redux :))
+    */
+    await createNewColumn(newColumnData)
 
     // Đóng trạng thái thêm Column mới và Clear Input
     toggleOpenNewColumnForm()
@@ -46,7 +56,7 @@ function ListColumns({ columns }) {
         overflowY: 'hidden',
         '&::-webkit-scrollbar-track': { m: 2 }
       }}>
-        {columns?.map(column => <Column key={column._id} column={ column }/>)}
+        {columns?.map(column => <Column key={column._id} column={ column } createNewCard={createNewCard}/>)}
 
         {/* Box add new column CTA */}
         {!openNewColumnForm
