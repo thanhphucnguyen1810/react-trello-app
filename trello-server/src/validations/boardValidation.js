@@ -36,6 +36,29 @@ const createNew = async (req, res, next) => {
   }
 }
 
+const update = async (req, res, next) => {
+  const correctCondition = Joi.object({
+    // LƯU Ý: Không required trong trường hợp update
+    title: Joi.string().min(3).max(50).trim().strict(),
+    description: Joi.string().min(3).max(256).trim().strict(),
+    type: Joi.string().valid(BOARD_TYPES.PUBLIC, BOARD_TYPES.PRIVATE)
+  })
+
+  try {
+    // console.log('red.body: ', req.body)
+    // set abortEarly: false: để TH có nhiều lỗi validation thì trả về tất cả lỗi (video52)
+    // Đối vói trường hợp update, cho phép unknown để  không cần đẩy lên một số field
+    await correctCondition.validateAsync(req.body, { abortEarly: false, allowUnknown: true })
+    // Validate dữ liệu xong thì chuyển cho request đi tiếp sang Controller
+    next()
+  } catch (error) {
+    const errorMessage = new Error(error).message
+    const customError = new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, errorMessage)
+    next(customError)
+  }
+}
+
 export const boardValidation = {
-  createNew
+  createNew,
+  update
 }

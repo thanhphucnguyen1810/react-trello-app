@@ -1,94 +1,129 @@
-// Board details
+// Component chính của trang Board chi tiết
+// Chịu trách nhiệm: gọi API lấy dữ liệu board, hiển thị giao diện, xử lý tạo column/card mới.
+
 import { useEffect, useState } from 'react'
+// import { useParams } from 'react-router-dom'
 import Container from '@mui/material/Container'
 
 import AppBar from '~/components/AppBar/AppBar'
 import BoardBar from './BoardBar/BoardBar'
 import BoardContent from './BoardContent/BoardContent'
 
-// import { mockData } from '~/apis/mock-data'
-import { fetchBoardDetailsAPI, createNewColumnAPI, createNewCardAPI } from '~/apis'
+import { fetchBoardDetailsAPI, createNewColumnAPI, createNewCardAPI, updateBoardDetailsAPI } from '~/apis'
 import { generatePlaceholderCardId } from '~/utils/formatters'
 import { isEmpty } from 'lodash'
 
 function Board() {
+  // const { boardId } = useParams() // Lấy board từ URL
 
-  const [board, setBoard] = useState(null)
+  const [board, setBoard] = useState(null) // Lưu toàn bộ thông tin board(columns, cards, order,...)
 
   useEffect(() => {
-    // sử dụng react-router-dom để lấy boardId từ URL về
     const boardId = '6854e421a2068d3685f1d76a'
+    const fetchBoard = async () => {
+      try {
+        const boardData = await fetchBoardDetailsAPI(boardId)
 
-    // call API
-    fetchBoardDetailsAPI(boardId)
-      .then((board) => {
-        // khi f5 trang, cần xử lý vấn đề kéo thả vào một column rỗng
-        board.columns.forEach(column => {
+        // Nếu column không có card nào, thêm placeholder card để DnD-Kit hoạt động
+        boardData.columns.forEach(column => {
           if (isEmpty(column.cards)) {
-            column.cards = [generatePlaceholderCardId(column)]
-            column.cardOrderIds = [generatePlaceholderCardId(column)._id]
+            const placeholder = generatePlaceholderCardId(column)
+            column.cards = [placeholder]
+            column.cardOrderIds = [placeholder._id]
           }
         })
-        setBoard(board)
-      })
+        setBoard(boardData)
+      } catch (err) {
+        console.error('Failed to fetch board details: ', err)
+        // TODO: có thể hiển thị UI fallback hoặc redirect về trang 404
+      }
+    }
+    fetchBoard()
   }, [])
 
-  // func có nhiệm vụ gọi API tạo mới column và làm lại dữ liệu state board
-  const createNewColumn = async (newColumnData) => {
-    const createdColumn = await createNewColumnAPI({
-      ...newColumnData,
-      boardId: board._id
-    })
+  // xử lý tạo mới column (sau khi user nhập form xong)
+  const handleCreateColumn = async (newColumnData) => {
+    try {
+      const createdColumn = await createNewColumnAPI({
+        ...newColumnData,
+        boardId: board._id
+      })
 
-    // Khi tạo column mới thì nó sẽ chưa có card, cần xử lý vấn đề kéo thả vào một column rỗng
-    createdColumn.cards = [generatePlaceholderCardId(createdColumn)]
-    createdColumn.cardOrderIds = [generatePlaceholderCardId(createdColumn)._id]
+      // Xử lý column rỗng: thêm placeholder card để kéo thả không bị lỗi
+      const placeholder = generatePlaceholderCardId(createdColumn)
+      createdColumn.cards = [placeholder]
+      createdColumn.cardOrderIds = [placeholder._id]
 
-
-    // cập nhật lại state board
-    /*
-      Phía Front-End ta phải tự làm đúng lại state data board thay vì gọi lại fetchBoardDetailsAPI
-      Lưu ý: cách làm này phục thuộc vào tùy lựa chọn và đặc thù dự án, có nới back-end sẽ hỗ trợ trả về luôn
-      toàn bộ Board dù đây có là API tạo column hay card đi nữa.
-    */
-    const newBoard = { ...board }
-    newBoard.columns.push(createdColumn)
-    newBoard.columnOrderIds.push(createdColumn._id)
-    setBoard(newBoard)
+      // Cập nhật lại state board - clone state để tránh mutate trực tiếp
+      setBoard(prev => ({
+        ...prev,
+        columns: [...prev.columns, createdColumn],
+        columnOrderIds: [...prev.columnOrderIds, createdColumn._id]
+      }))
+    } catch (err) {
+      console.error('Error creating new column: ', err)
+      // TODO: thông báo lỗi cho user bằng toast/snackbar
+    }
   }
 
-  // func có nhiệm vụ gọi API tạo mới card và làm lại dữ liệu state board
-  const createNewCard = async (newCardData) => {
-    const createdCard = await createNewCardAPI({
-      ...newCardData,
-      boardId: board._id
-    })
+  // Xử lý tạo mới card trong một column cụ thể
+  const handleCreateCard = async (newCardData) => {
+    try {
+      const createdCard = await createNewCardAPI({
+        ...newCardData,
+        boardId: board._id
+      })
 
-    // cập nhật lại state board
-    const newBoard = { ...board }
-    const columnToUpdate = newBoard.columns.find(column => column._id === createdCard.columnId)
-    if (columnToUpdate) {
-      columnToUpdate.cards.push(createdCard)
-      columnToUpdate.cardOrderIds.push(createdCard._id)
+      // Cập nhật lại card trong column tương ứng
+      setBoard(prev => {
+        const updatedColumns = prev.columns.map(column => {
+          if (column._id !== createdCard.columnId) return column
+
+          return {
+            ...column,
+            cards: [...column.cards, createdCard],
+            cardOrderIds: [...column.cardOrderIds, createdCard._id]
+          }
+        })
+
+        return {
+          ...prev,
+          columns: updatedColumns
+        }
+      })
+    } catch (err) {
+      console.error('Error creating new card:', err)
     }
+  }
+
+  // Xử lý khi kéo thả column xong
+  const moveColumns = async (dndOrderedColumns) => {
+    const dndOrderedColumnsIds = dndOrderedColumns.map(column => column._id)
+    const newBoard = { ...board }
+    newBoard.columns = dndOrderedColumns
+    newBoard.columnOrderIds = dndOrderedColumnsIds
     setBoard(newBoard)
+
+    // gọi API update board
+    await updateBoardDetailsAPI(newBoard._id, { columnOrderIds: newBoard.columnOrderIds })
   }
 
   return (
     <Container disableGutters maxWidth={false} sx={{ height: '100vh' }}>
       <AppBar />
+
+      {/* Thanh trên cùng: tên board, thành viên, menu,... */}
       <BoardBar board={board} />
+
+      {/* Nội dung chính: danh sách columns và cards */}
       <BoardContent
         board={board}
-        createNewColumn={createNewColumn}
-        createNewCard={createNewCard}
+        createNewColumn={handleCreateColumn}
+        createNewCard={handleCreateCard}
+        moveColumns={moveColumns}
       />
     </Container>
   )
 }
 
 export default Board
-
-// boardId: 68494eab43a408588d524905
-// columnId: 68494f78c18121aa246f7f2f
-// cardId: 6849505bc18121aa246f7f32

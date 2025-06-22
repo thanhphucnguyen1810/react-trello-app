@@ -24,7 +24,20 @@ const getDetails = async (req, res, next) => {
   } catch (error) { next(error) } // Sẽ được đưa vào middleware xử lý lỗi tập trung ở server.js
 }
 
+const update = async (req, res, next) => {
+  try {
+    const boardId = req.params.id
+
+    // Điều hướng dữ liệu sang tầng Service
+    const updatedBoard = await boardService.update(boardId, req.body)
+
+    // Có kết quả thì trả về
+    res.status(StatusCodes.OK).json(updatedBoard)
+  } catch (error) { next(error) } // Sẽ được đưa vào middleware xử lý lỗi tập trung ở server.js
+}
+
 export const boardController = {
   createNew,
-  getDetails
+  getDetails,
+  update
 }
