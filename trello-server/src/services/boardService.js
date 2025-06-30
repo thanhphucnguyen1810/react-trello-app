@@ -68,7 +68,6 @@ const update = async (boardId, reqBody) => {
     }
     const updatedBoard = await boardModel.update(boardId, updateData)
 
-
     // Trong services luôn phải có return
     return updatedBoard
 
